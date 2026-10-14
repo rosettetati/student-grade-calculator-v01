@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
+#include <deque> // Change to <vector> or <list> as needed for testing
 #include <algorithm>
 #include <iomanip>
 #include <chrono>
@@ -11,26 +11,20 @@
 
 int main() {
     try {
-        // 1. Generate required test files for v0.2
-        std::cout << "Generating test files...\n";
-        FileGenerator::generateFile(10000);
-        FileGenerator::generateFile(100000);
-        FileGenerator::generateFile(1000000);
-        // Note: 10,000,000 can be generated too, but let's test execution with one or more files first.
-
-        std::string filename = "students10000.txt"; // You can change this to test other file sizes
-        std::cout << "\nProcessing file: " << filename << "\n";
+        std::string filename = "students10000.txt"; // Test with 10k, 100k, 1M, etc.
+        std::cout << "\n--- Container Performance Analysis (v0.25) --- \n";
+        std::cout << "Processing file: " << filename << " using std::deque\n";
 
         auto startTotal = std::chrono::high_resolution_clock::now();
 
-        // 2. Read from file with Exception Handling
+        // 1. Read from file
         auto startRead = std::chrono::high_resolution_clock::now();
         std::ifstream file(filename);
         if (!file.is_open()) {
             throw std::runtime_error("Error: Could not open file " + filename);
         }
 
-        std::vector<Person> students;
+        std::deque<Person> students;
         std::string line;
         std::getline(file, line); // Skip header
 
@@ -54,17 +48,17 @@ int main() {
         file.close();
         auto endRead = std::chrono::high_resolution_clock::now();
 
-        // 3. Sort students by final average score
+        // 2. Sort students (Note: if using std::list, use students.sort() instead of std::sort)
         auto startSort = std::chrono::high_resolution_clock::now();
         std::sort(students.begin(), students.end(), [](const Person& a, const Person& b) {
             return a.getFinalAvg() < b.getFinalAvg();
         });
         auto endSort = std::chrono::high_resolution_clock::now();
 
-        // 4. Split into passed (< 5.0 vs >= 5.0)
+        // 3. Split into passed/failed categories
         auto startSplit = std::chrono::high_resolution_clock::now();
-        std::vector<Person> failedStudents;
-        std::vector<Person> passedStudents;
+        std::deque<Person> failedStudents;
+        std::deque<Person> passedStudents;
 
         for (const auto& student : students) {
             if (student.getFinalAvg() < 5.0) {
@@ -75,13 +69,13 @@ int main() {
         }
         auto endSplit = std::chrono::high_resolution_clock::now();
 
-        // 5. Output to new files
+        // 4. Output results to files
         auto startWrite = std::chrono::high_resolution_clock::now();
         std::ofstream failFile("failed_students.txt");
         std::ofstream passFile("passed_students.txt");
 
         if (!failFile.is_open() || !passFile.is_open()) {
-            throw std::runtime_error("Error: Could not create output files for results.");
+            throw std::runtime_error("Error: Could not create output files.");
         }
 
         for (const auto& s : failedStudents) {
@@ -97,8 +91,7 @@ int main() {
 
         auto endTotal = std::chrono::high_resolution_clock::now();
 
-        // Performance Speed Rate Analysis Report
-        std::cout << "\n--- Performance Analysis for " << filename << " ---\n";
+        // Results
         std::cout << "Data Read Time:  " << std::chrono::duration<double>(endRead - startRead).count() << " seconds\n";
         std::cout << "Data Sort Time:  " << std::chrono::duration<double>(endSort - startSort).count() << " seconds\n";
         std::cout << "Data Split Time: " << std::chrono::duration<double>(endSplit - startSplit).count() << " seconds\n";
